@@ -35,7 +35,7 @@ git init
 git add .
 git commit -m "Primeira versão do app do Desafio Funcional"
 git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/desafio-funcional.git
+git remote add origin https://github.com/Du-Edu-Duarte/desafio-funcional.git
 git push -u origin main
 ```
 Antes, crie o repositório vazio em github.com > **New repository** com o nome `desafio-funcional` (sem README).
@@ -43,7 +43,7 @@ Antes, crie o repositório vazio em github.com > **New repository** com o nome `
 ## Colocar no ar como site (grátis, GitHub Pages)
 1. No repositório no GitHub: **Settings > Pages**.
 2. Em **Source**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)` > **Save**.
-3. Em 1 a 2 minutos o site fica em `https://SEU-USUARIO.github.io/desafio-funcional/`.
+3. Em 1 a 2 minutos o site fica em `https://Du-Edu-Duarte.github.io/desafio-funcional/`.
 
 ## Instalar no celular como app
 - **Android (Chrome):** abra o link > menu ⋮ > **Instalar app** (ou "Adicionar à tela inicial").
