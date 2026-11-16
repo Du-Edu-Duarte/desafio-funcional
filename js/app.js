@@ -1,11 +1,11 @@
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='desafio-funcional-thalison-3';
-const EXEMPLOS=[['Mariana Costa','aluno'],['Rafael Oliveira','aluno'],['Juliana Alves','aluno'],['Pedro Henrique','nao'],['Camila Ribeiro','nao'],['Lucas Martins','aluno']];
+const EXEMPLOS=[['Mariana Costa','aluno','F',34],['Rafael Oliveira','aluno','M',52],['Juliana Alves','aluno','F',55],['Pedro Henrique','nao','M',29],['Camila Ribeiro','nao','F',41],['Lucas Martins','aluno','M',38]];
 
 let S=load()||{
   seq:1,
-  participantes:EXEMPLOS.map(([nome,tipo],i)=>({id:i+1,num:i+1,nome,tipo,tel:'',exemplo:true})),
+  participantes:EXEMPLOS.map(([nome,tipo,sexo,idade],i)=>({id:i+1,num:i+1,nome,tipo,sexo,idade,tel:'',exemplo:true})),
   prova:null
 };
 if(!load())S.seq=EXEMPLOS.length+1;
@@ -14,6 +14,23 @@ const CFG_PADRAO={titulo:'3º Desafio Funcional do Thalison',destaque:'Funcional
 S.config={...CFG_PADRAO,...(S.config||{})};
 const CORES=[['#FFD21A','Amarelo'],['#FF8A1F','Laranja'],['#C6F432','Verde-limão'],['#FF4D4D','Vermelho'],['#3DA5FF','Azul'],['#FF5FB4','Rosa'],['#B98CFF','Roxo'],['#F2F2F2','Branco']];
 let tab='prova',filtro='todos',editId=null,confirmAction=null;
+/* Categorias de premiação. Para criar outra, adicione uma linha: [chave, nome, regra]. */
+const TOP=5;
+const CATS=[
+  ['todos','Geral',p=>true],
+  ['m','Masculino',p=>p.sexo==='M'],
+  ['f','Feminino',p=>p.sexo==='F'],
+  ['aluno','Alunos',p=>p.tipo==='aluno'],
+  ['nao','Não alunos',p=>p.tipo==='nao'],
+  ['aluno-m','Alunos masculino',p=>p.tipo==='aluno'&&p.sexo==='M'],
+  ['aluno-f','Alunos feminino',p=>p.tipo==='aluno'&&p.sexo==='F'],
+  ['nao-m','Não alunos masculino',p=>p.tipo==='nao'&&p.sexo==='M'],
+  ['nao-f','Não alunos feminino',p=>p.tipo==='nao'&&p.sexo==='F'],
+  ['aluno-50-m','Alunos 50+ masculino',p=>p.tipo==='aluno'&&p.idade>=50&&p.sexo==='M'],
+  ['aluno-50-f','Alunos 50+ feminino',p=>p.tipo==='aluno'&&p.idade>=50&&p.sexo==='F']
+];
+const catAtual=()=>CATS.find(c=>c[0]===filtro)||CATS[0];
+const sexoTxt=p=>p.sexo==='M'?'Masc.':p.sexo==='F'?'Fem.':'—';
 
 function load(){try{const d=localStorage.getItem(KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -101,14 +118,18 @@ function proxNum(){return S.participantes.reduce((m,p)=>Math.max(m,p.num),0)+1;}
 function salvarCad(e){
   e.preventDefault();
   const nome=$('#cNome').value.trim().replace(/\s+/g,' '),tipo=document.querySelector('input[name=tipo]:checked').value,tel=$('#cTel').value.trim();
+  const sx=document.querySelector('input[name=sexo]:checked'),sexo=sx?sx.value:'',idTxt=$('#cIdade').value.trim(),idade=idTxt?parseInt(idTxt,10):null;
   let num=$('#cNum').value.trim();
   if(nome.length<3){$('#cErr').textContent='Digite o nome do participante.';return;}
+  if(!sexo){$('#cErr').textContent='Marque o sexo (define a categoria no resultado).';return;}
+  if(idTxt&&!(idade>0&&idade<120)){$('#cErr').textContent='A idade precisa ser um número.';return;}
+  if(tipo==='aluno'&&idade==null){$('#cErr').textContent='Digite a idade do aluno (define a categoria 50+).';return;}
   num=num?parseInt(num,10):(editId?S.participantes.find(p=>p.id===editId).num:proxNum());
   if(!(num>0)){$('#cErr').textContent='O número de peito precisa ser um número.';return;}
   if(S.participantes.some(p=>p.num===num&&p.id!==editId)){$('#cErr').textContent=`O número ${num} já está com outro participante.`;return;}
   if(S.participantes.some(p=>p.nome.toLowerCase()===nome.toLowerCase()&&p.id!==editId)){$('#cErr').textContent='Já existe um participante com esse nome.';return;}
-  if(editId){Object.assign(S.participantes.find(p=>p.id===editId),{nome,tipo,tel,num,exemplo:false});toast('Cadastro atualizado');}
-  else{S.participantes.push({id:S.seq++,num,nome,tipo,tel,exemplo:false});toast(`${nome} cadastrado com o nº ${num}`);}
+  if(editId){Object.assign(S.participantes.find(p=>p.id===editId),{nome,tipo,sexo,idade,tel,num,exemplo:false});toast('Cadastro atualizado');}
+  else{S.participantes.push({id:S.seq++,num,nome,tipo,sexo,idade,tel,exemplo:false});toast(`${nome} cadastrado com o nº ${num}`);}
   save();limparForm();renderCad();renderProva();
   $('#cNome').focus();
 }
@@ -116,6 +137,7 @@ function limparForm(){editId=null;$('#formCad').reset();$('#cErr').textContent='
 function editar(id){
   const p=S.participantes.find(x=>x.id===id);editId=id;
   $('#cNome').value=p.nome;$('#cTel').value=p.tel;$('#cNum').value=p.num;$(p.tipo==='aluno'?'#tAluno':'#tNao').checked=true;
+  $('#sM').checked=p.sexo==='M';$('#sF').checked=p.sexo==='F';$('#cIdade').value=p.idade??'';
   $('#formTitle').textContent='Editar participante';$('#btnSalvar').textContent='Salvar alterações';$('#btnCancelEdit').hidden=false;$('#cErr').textContent='';$('#cNome').focus();
 }
 let removendo=null;
@@ -126,11 +148,11 @@ function renderCad(){
   $('#cadStats').innerHTML=`<div class="stat"><b>${ps.length}</b>Total</div><div class="stat"><b>${al}</b>Alunos</div><div class="stat"><b>${ps.length-al}</b>Não alunos</div>`;
   $('#demoBox').hidden=!ps.some(p=>p.exemplo);
   const travado=true;
-  $('#tblCad').innerHTML=`<thead><tr><th class="num">Nº</th><th>Nome</th><th>Tipo</th><th>Telefone</th><th></th></tr></thead><tbody>${
-    ps.length?ps.map(p=>`<tr><td class="num"><span class="bign">${p.num}</span></td><td><b>${esc(p.nome)}</b></td><td>${tipoTag(p.tipo)}</td><td class="muted">${esc(p.tel)||'—'}</td>
+  $('#tblCad').innerHTML=`<thead><tr><th class="num">Nº</th><th>Nome</th><th>Tipo</th><th>Sexo / idade</th><th>Telefone</th><th></th></tr></thead><tbody>${
+    ps.length?ps.map(p=>`<tr><td class="num"><span class="bign">${p.num}</span></td><td><b>${esc(p.nome)}</b></td><td>${tipoTag(p.tipo)}</td><td class="muted">${sexoTxt(p)}${p.idade?' · '+p.idade+' anos':''}</td><td class="muted">${esc(p.tel)||'—'}</td>
     <td><div class="rowact">${removendo===p.id?`<span class="muted" style="align-self:center">Remover?</span><button type="button" class="btn sm danger" data-delok="${p.id}">Sim</button><button type="button" class="btn sm ghost" data-delno="1">Não</button>`:
     `<button type="button" class="btn sm" data-edit="${p.id}">Editar</button><button type="button" class="btn sm ghost" data-del="${p.id}" ${travado&&S.prova.res[p.id]?'disabled title="Já tem tempo registrado"':''}>Remover</button>`}</div></td></tr>`).join(''):
-    '<tr><td colspan="5" style="padding:20px;text-align:center" class="muted">Nenhum participante. Use o formulário para cadastrar.</td></tr>'}</tbody>`;
+    '<tr><td colspan="6" style="padding:20px;text-align:center" class="muted">Nenhum participante. Use o formulário para cadastrar.</td></tr>'}</tbody>`;
   if(!editId)$('#cNum').placeholder='Automático: '+proxNum();
 }
 
@@ -139,9 +161,9 @@ function posicoes(){
   const fin=S.participantes.filter(p=>estado(S.prova.res[p.id])==='fin').sort((a,b)=>S.prova.res[a.id].ms-S.prova.res[b.id].ms);
   const o={};fin.forEach((p,i)=>o[p.id]=i+1);return o;
 }
-function classificacao(){
+function classificacao(cat=catAtual()){
   const res=S.prova.res;
-  const base=S.participantes.filter(p=>filtro==='todos'||p.tipo===filtro);
+  const base=S.participantes.filter(cat[2]);
   const fin=base.filter(p=>estado(res[p.id])==='fin').sort((a,b)=>res[a.id].ms-res[b.id].ms);
   const dnf=base.filter(p=>estado(res[p.id])==='dnf');
   const corr=base.filter(p=>['run','wait'].includes(estado(res[p.id])));
@@ -150,7 +172,13 @@ function classificacao(){
 function renderRes(){
   const st=S.prova.status,res=S.prova.res,{fin,dnf,corr}=classificacao();
   const algum=Object.keys(res).length>0;$('#resStatus').textContent=!algum?'Prova ainda não começou':terminou()?'Resultado final':'Parcial · prova em andamento';
-  const nomeFiltro={todos:'',aluno:' entre alunos',nao:' entre não alunos'}[filtro];
+  const nomeFiltro=filtro==='todos'?'':' em '+catAtual()[1];
+  if(!$('#filters').children.length)$('#filters').innerHTML=CATS.map(c=>`<button type="button" data-f="${c[0]}">${c[1]}</button>`).join('');
+  document.querySelectorAll('#filters button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===filtro));
+  const semDados=S.participantes.filter(p=>!p.sexo||(p.tipo==='aluno'&&!p.idade)).length;
+  $('#resAviso').hidden=!semDados;
+  $('#resAviso').innerHTML=semDados?`<span><b>${semDados}</b> participante(s) sem sexo ou idade no cadastro. Edite em <b>Cadastro</b> para entrarem nas categorias.</span>`:'';
+  $('#podium45').innerHTML=fin.slice(3,TOP).map((p,i)=>`<div class="pod"><div class="place">${i+4}º</div><div class="nm">${esc(p.nome)}</div><div class="t">${fmt(res[p.id].ms)}</div></div>`).join('');
   $('#podium').innerHTML=fin.length?[1,0,2].map(i=>fin[i]?`<div class="pod p${i+1}"><div class="place">${i+1}º</div><div class="nm">${esc(fin[i].nome)}</div><div class="t">${fmt(res[fin[i].id].ms)}</div><div>${tipoTag(fin[i].tipo)}</div></div>`:'<div></div>').join(''):
     `<div class="empty" style="grid-column:1/-1">${!algum?'A classificação aparece aqui quando os participantes começarem a chegar.':'Ninguém chegou ainda'+nomeFiltro+'.'}</div>`;
   const lider=fin[0]?res[fin[0].id].ms:0;
@@ -161,11 +189,18 @@ function renderRes(){
 }
 function textoResultado(){
   const {fin,dnf}=classificacao(),res=S.prova.res;
-  const titulo={todos:'Geral',aluno:'Alunos',nao:'Não alunos'}[filtro];
+  const titulo=catAtual()[1];
   const med=['🥇','🥈','🥉'];
   return `🏆 ${S.config.titulo.toUpperCase()}\nClassificação ${titulo}${terminou()?'':' (parcial)'}\n\n`+
     fin.map((p,i)=>`${med[i]||(i+1)+'º'} ${p.nome} — ${fmt(res[p.id].ms)}`).join('\n')+
     (dnf.length?`\n\nNão concluíram: ${dnf.map(p=>p.nome).join(', ')}`:'')+`\n\nParabéns a todos! 💪`;
+}
+
+function textoPodios(){
+  const res=S.prova.res,med=['🥇','🥈','🥉'];
+  const blocos=CATS.map(c=>{const fin=classificacao(c).fin.slice(0,TOP);
+    return fin.length?`*${c[1].toUpperCase()}*\n`+fin.map((p,i)=>`${med[i]||(i+1)+'º'} ${p.nome} — ${fmt(res[p.id].ms)}`).join('\n'):'';}).filter(Boolean);
+  return `🏆 ${S.config.titulo.toUpperCase()}\nPódios por categoria${terminou()?'':' (parcial)'}\n\n`+(blocos.join('\n\n')||'Ninguém concluiu ainda.')+`\n\nParabéns a todos! 💪`;
 }
 
 /* ---------- geral ---------- */
@@ -246,12 +281,14 @@ $('#tblCad').addEventListener('click',e=>{
   else if(b.dataset.delok){const id=+b.dataset.delok;S.participantes=S.participantes.filter(p=>p.id!==id);delete S.prova.res[id];S.prova.hist=S.prova.hist.filter(x=>x.id!==id);removendo=null;if(editId===id)limparForm();save();renderCad();renderProva();toast('Participante removido');}
 });
 $('#btnClearDemo').onclick=()=>{const ids=S.participantes.filter(p=>p.exemplo).map(p=>p.id);S.participantes=S.participantes.filter(p=>!p.exemplo);ids.forEach(id=>delete S.prova.res[id]);S.prova.hist=S.prova.hist.filter(x=>!ids.includes(x.id));save();limparForm();renderCad();renderProva();toast('Exemplos apagados');};
-$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filtro=b.dataset.f;document.querySelectorAll('#filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#copyArea').hidden=true;renderRes();});
-$('#btnCopy').onclick=()=>{
-  const txt=textoResultado(),ta=$('#copyArea');
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filtro=b.dataset.f;$('#copyArea').hidden=true;renderRes();});
+$('#btnCopy').onclick=()=>copiar(textoResultado());
+$('#btnCopyAll').onclick=()=>copiar(textoPodios());
+function copiar(txt){
+  const ta=$('#copyArea');
   const fallback=()=>{ta.value=txt;ta.hidden=false;ta.focus();ta.select();toast('Texto selecionado: copie e cole no WhatsApp');};
   try{navigator.clipboard.writeText(txt).then(()=>toast('Resultado copiado! Cole no WhatsApp'),fallback);}catch(e){fallback();}
-};
+}
 
 $('#cfgTitulo').oninput=e=>mudarCfg('titulo',e.target.value.trim()||'Desafio');
 $('#cfgDestaque').oninput=e=>mudarCfg('destaque',e.target.value.trim());

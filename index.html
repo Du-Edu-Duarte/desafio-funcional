@@ -66,6 +66,12 @@
             <input type="radio" name="tipo" id="tAluno" value="aluno" checked><label for="tAluno">Aluno<small>Treina com o Thalison</small></label>
             <input type="radio" name="tipo" id="tNao" value="nao"><label for="tNao">Não aluno<small>Convidado / externo</small></label>
           </div></div>
+        <div class="field"><span class="lb">Sexo</span>
+          <div class="seg" role="radiogroup" aria-label="Sexo">
+            <input type="radio" name="sexo" id="sM" value="M"><label for="sM">Masculino</label>
+            <input type="radio" name="sexo" id="sF" value="F"><label for="sF">Feminino</label>
+          </div></div>
+        <div class="field"><label for="cIdade">Idade <span class="muted">(define a categoria 50+)</span></label><input type="text" id="cIdade" inputmode="numeric" maxlength="3" placeholder="Ex.: 34"></div>
         <div class="field"><label for="cTel">Telefone / WhatsApp <span class="muted">(opcional)</span></label><input type="tel" id="cTel" placeholder="(11) 90000-0000"></div>
         <div class="field"><label for="cNum">Número de peito</label><input type="text" id="cNum" inputmode="numeric" placeholder="Automático"></div>
         <div class="err" id="cErr"></div>
@@ -83,15 +89,13 @@
   <section id="tab-resultado" class="app" style="gap:14px" hidden>
     <div class="res-head">
       <div><div class="eyebrow" id="resStatus"></div><h2>Classificação</h2></div>
-      <div class="filters" id="filters" role="group" aria-label="Filtrar classificação">
-        <button type="button" data-f="todos" aria-pressed="true">Geral</button>
-        <button type="button" data-f="aluno" aria-pressed="false">Alunos</button>
-        <button type="button" data-f="nao" aria-pressed="false">Não alunos</button>
-      </div>
     </div>
+    <div class="filters" id="filters" role="group" aria-label="Escolher categoria"></div>
+    <div class="demo" id="resAviso" hidden></div>
     <div class="podium" id="podium"></div>
+    <div class="podium45" id="podium45"></div>
     <div class="tbl-wrap"><table id="tblRes"></table></div>
-    <div class="actions"><button type="button" class="btn" id="btnCopy">Copiar resultado para o WhatsApp</button></div>
+    <div class="actions"><button type="button" class="btn y" id="btnCopyAll">Copiar todos os pódios (1º ao 5º)</button><button type="button" class="btn" id="btnCopy">Copiar só esta categoria</button></div>
     <textarea id="copyArea" hidden readonly style="width:100%;min-height:160px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;font:13px var(--f-mono)"></textarea>
   </section>
 

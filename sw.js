@@ -1,9 +1,9 @@
 // Service worker: deixa o app funcionando mesmo sem internet no dia da prova.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo para os celulares baixarem a nova.
-const VERSAO = 'desafio-v1';
+const VERSAO = 'desafio-v3';
 const ARQUIVOS = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'manifest.webmanifest',
-  'assets/logo.jpg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/apple-touch-icon.png'
+  'assets/logo.jpg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png', 'assets/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {

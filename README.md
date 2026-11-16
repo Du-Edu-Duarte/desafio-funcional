@@ -3,9 +3,9 @@
 App de cronometragem para desafios de corrida/funcional. Funciona no navegador do computador e do celular, e pode ser **instalado no celular como app** (PWA).
 
 ## O que o app faz
-- **Cadastro** de participantes: nome, se é aluno ou não aluno, telefone (opcional) e número de peito.
+- **Cadastro** de participantes: nome, se é aluno ou não aluno, sexo, idade, telefone (opcional) e número de peito.
 - **Prova** com largada individual: cada pessoa tem seu botão Iniciar e seu cronômetro; toque de novo para finalizar.
-- **Resultado** com pódio, ranking geral / alunos / não alunos e botão para copiar o resultado para o WhatsApp.
+- **Resultado** com pódio do 1º ao 5º lugar por categoria (geral, masculino, feminino, alunos, não alunos, combinações e alunos 50+ masculino/feminino) e botão para copiar todos os pódios para o WhatsApp.
 - **Configurações**: nome do desafio, palavra em destaque, subtítulo, foto/logo e cor do tema.
 - Funciona **sem internet** depois de aberto uma vez (service worker).
 
