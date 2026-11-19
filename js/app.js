@@ -1,14 +1,9 @@
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KEY='desafio-funcional-thalison-3';
-const EXEMPLOS=[['Mariana Costa','aluno','F',34],['Rafael Oliveira','aluno','M',52],['Juliana Alves','aluno','F',55],['Pedro Henrique','nao','M',29],['Camila Ribeiro','nao','F',41],['Lucas Martins','aluno','M',38]];
-
-let S=load()||{
-  seq:1,
-  participantes:EXEMPLOS.map(([nome,tipo,sexo,idade],i)=>({id:i+1,num:i+1,nome,tipo,sexo,idade,tel:'',exemplo:true})),
-  prova:null
-};
-if(!load())S.seq=EXEMPLOS.length+1;
+/* Os dados agora ficam na nuvem (Firebase) e são sincronizados por js/nuvem.js.
+   S é só a cópia em memória do que está na nuvem. */
+let S={participantes:[],prova:null,config:null};
+const novoId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const LOGO_PADRAO=document.querySelector('.logo').src;
 const CFG_PADRAO={titulo:'3º Desafio Funcional do Thalison',destaque:'Funcional',sub:'Cronometragem e classificação da prova',logo:null,cor:'#FFD21A'};
 S.config={...CFG_PADRAO,...(S.config||{})};
@@ -32,8 +27,8 @@ const CATS=[
 const catAtual=()=>CATS.find(c=>c[0]===filtro)||CATS[0];
 const sexoTxt=p=>p.sexo==='M'?'Masc.':p.sexo==='F'?'Fem.':'—';
 
-function load(){try{const d=localStorage.getItem(KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const KEY_HIST='desafio-funcional-hist'; // "desfazer" vale só para as ações deste aparelho
+function save(){try{localStorage.setItem(KEY_HIST,JSON.stringify(S.prova.hist.slice(-50)));}catch(e){}if(window.Nuvem)window.Nuvem.salvar(S);}
 
 function fmt(ms,cs=true){
   if(ms==null)return '—';ms=Math.max(0,ms);
@@ -46,6 +41,7 @@ const tipoTag=t=>t==='aluno'?'<span class="tag">Aluno</span>':'<span class="tag 
 /* ---------- prova ---------- */
 const PROVA_NOVA=()=>({v:2,status:'aberta',res:{},hist:[]});
 if(!S.prova||S.prova.v!==2)S.prova=PROVA_NOVA();
+try{S.prova.hist=JSON.parse(localStorage.getItem(KEY_HIST))||[];}catch(e){}
 const getP=id=>S.participantes.find(x=>x.id===id);
 const estado=r=>!r?'wait':r.run?'run':r.dnf?'dnf':'fin';
 function contagem(){const n={wait:0,run:0,fin:0,dnf:0};S.participantes.forEach(p=>n[estado(S.prova.res[p.id])]++);return n;}
@@ -67,11 +63,15 @@ function desistiu(id){
 }
 function checarFim(){if(terminou()&&S.prova.status!=='encerrada'){S.prova.status='encerrada';save();renderProva();toast('Todos terminaram! Resultado final pronto');}}
 function desfazer(){
-  const h=S.prova.hist.pop();if(!h)return;const r=S.prova.res[h.id],p=getP(h.id);
-  if(p){
-    if(h.tipo==='inicio'){delete S.prova.res[h.id];toast(`Largada de ${p.nome} desfeita`);}
-    else if(r){r.run=true;r.dnf=false;r.ms=null;toast(`${h.tipo==='fim'?'Chegada':'Desistência'} de ${p.nome} desfeita. O cronômetro dele continua.`);}
+  // Desfaz a última ação feita NESTE aparelho. Se outro aparelho já mexeu nesse participante depois, pula.
+  let h,r,p;
+  while((h=S.prova.hist.pop())){
+    r=S.prova.res[h.id];p=getP(h.id);
+    if(p&&r&&((h.tipo==='inicio'&&r.run)||(h.tipo==='fim'&&!r.run&&!r.dnf)||(h.tipo==='dnf'&&r.dnf)))break;
   }
+  if(!h){save();renderProva();toast('Nada para desfazer neste aparelho');return;}
+  if(h.tipo==='inicio'){delete S.prova.res[h.id];toast(`Largada de ${p.nome} desfeita`);}
+  else{r.run=true;r.dnf=false;r.ms=null;toast(`${h.tipo==='fim'?'Chegada':'Desistência'} de ${p.nome} desfeita. O cronômetro dele continua.`);}
   S.prova.status='aberta';save();renderProva();
 }
 function encerrar(){
@@ -128,8 +128,8 @@ function salvarCad(e){
   if(!(num>0)){$('#cErr').textContent='O número de peito precisa ser um número.';return;}
   if(S.participantes.some(p=>p.num===num&&p.id!==editId)){$('#cErr').textContent=`O número ${num} já está com outro participante.`;return;}
   if(S.participantes.some(p=>p.nome.toLowerCase()===nome.toLowerCase()&&p.id!==editId)){$('#cErr').textContent='Já existe um participante com esse nome.';return;}
-  if(editId){Object.assign(S.participantes.find(p=>p.id===editId),{nome,tipo,sexo,idade,tel,num,exemplo:false});toast('Cadastro atualizado');}
-  else{S.participantes.push({id:S.seq++,num,nome,tipo,sexo,idade,tel,exemplo:false});toast(`${nome} cadastrado com o nº ${num}`);}
+  if(editId){Object.assign(S.participantes.find(p=>p.id===editId),{nome,tipo,sexo,idade,tel,num});toast('Cadastro atualizado');}
+  else{S.participantes.push({id:novoId(),num,nome,tipo,sexo,idade,tel});toast(`${nome} cadastrado com o nº ${num}`);}
   save();limparForm();renderCad();renderProva();
   $('#cNome').focus();
 }
@@ -146,7 +146,9 @@ function renderCad(){
   const al=ps.filter(p=>p.tipo==='aluno').length;
   $('#nCad').textContent=`(${ps.length})`;
   $('#cadStats').innerHTML=`<div class="stat"><b>${ps.length}</b>Total</div><div class="stat"><b>${al}</b>Alunos</div><div class="stat"><b>${ps.length-al}</b>Não alunos</div>`;
-  $('#demoBox').hidden=!ps.some(p=>p.exemplo);
+  const vistos={},rep=[];ps.forEach(p=>{if(vistos[p.num]&&!rep.includes(p.num))rep.push(p.num);vistos[p.num]=1;});
+  $('#dupBox').hidden=!rep.length;
+  $('#dupBox').innerHTML=rep.length?`<span>Número de peito repetido: <b>${rep.join(', ')}</b>. Dois aparelhos cadastraram ao mesmo tempo. Edite um deles.</span>`:'';
   const travado=true;
   $('#tblCad').innerHTML=`<thead><tr><th class="num">Nº</th><th>Nome</th><th>Tipo</th><th>Sexo / idade</th><th>Telefone</th><th></th></tr></thead><tbody>${
     ps.length?ps.map(p=>`<tr><td class="num"><span class="bign">${p.num}</span></td><td><b>${esc(p.nome)}</b></td><td>${tipoTag(p.tipo)}</td><td class="muted">${sexoTxt(p)}${p.idade?' · '+p.idade+' anos':''}</td><td class="muted">${esc(p.tel)||'—'}</td>
@@ -263,24 +265,23 @@ $('#confirmYes').onclick=()=>{const f=confirmAction;fecharConfirmacao();if(f)f()
 $('#confirmNo').onclick=fecharConfirmacao;
 $('#busca').oninput=()=>renderProva();
 $('#grid').addEventListener('click',e=>{
-  const d=e.target.closest('[data-dnf]');if(d){e.stopPropagation();desistiu(+d.dataset.dnf);return;}
+  const d=e.target.closest('[data-dnf]');if(d){e.stopPropagation();desistiu(d.dataset.dnf);return;}
   const f=e.target.closest('[data-fim]'),i=e.target.closest('[data-ini-id]');
   if(!f&&!i)return;
-  const id=f?+f.dataset.fim:+i.dataset.iniId;
+  const id=f?f.dataset.fim:i.dataset.iniId;
   if($('#busca').value)$('#busca').value='';
   f?finalizarP(id):iniciarP(id);
 });
-$('#grid').addEventListener('keydown',e=>{const d=e.target.closest('[data-dnf]');if(d&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();desistiu(+d.dataset.dnf);}});
+$('#grid').addEventListener('keydown',e=>{const d=e.target.closest('[data-dnf]');if(d&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();desistiu(d.dataset.dnf);}});
 $('#formCad').addEventListener('submit',salvarCad);
 $('#btnCancelEdit').onclick=limparForm;
 $('#tblCad').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.edit)editar(+b.dataset.edit);
-  else if(b.dataset.del){removendo=+b.dataset.del;renderCad();}
+  if(b.dataset.edit)editar(b.dataset.edit);
+  else if(b.dataset.del){removendo=b.dataset.del;renderCad();}
   else if(b.dataset.delno){removendo=null;renderCad();}
-  else if(b.dataset.delok){const id=+b.dataset.delok;S.participantes=S.participantes.filter(p=>p.id!==id);delete S.prova.res[id];S.prova.hist=S.prova.hist.filter(x=>x.id!==id);removendo=null;if(editId===id)limparForm();save();renderCad();renderProva();toast('Participante removido');}
+  else if(b.dataset.delok){const id=b.dataset.delok;S.participantes=S.participantes.filter(p=>p.id!==id);delete S.prova.res[id];S.prova.hist=S.prova.hist.filter(x=>x.id!==id);removendo=null;if(editId===id)limparForm();save();renderCad();renderProva();toast('Participante removido');}
 });
-$('#btnClearDemo').onclick=()=>{const ids=S.participantes.filter(p=>p.exemplo).map(p=>p.id);S.participantes=S.participantes.filter(p=>!p.exemplo);ids.forEach(id=>delete S.prova.res[id]);S.prova.hist=S.prova.hist.filter(x=>!ids.includes(x.id));save();limparForm();renderCad();renderProva();toast('Exemplos apagados');};
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filtro=b.dataset.f;$('#copyArea').hidden=true;renderRes();});
 $('#btnCopy').onclick=()=>copiar(textoResultado());
 $('#btnCopyAll').onclick=()=>copiar(textoPodios());
@@ -303,6 +304,23 @@ $('#cfgYes').onclick=()=>{$('#cfgConfirm').hidden=true;S.config={...CFG_PADRAO};
 
 aplicarConfig();
 limparForm();renderCad();renderProva();
+
+/* ---------- ponte com a nuvem (js/nuvem.js) ---------- */
+function redesenhar(){renderCad();if(tab==='prova')renderProva();if(tab==='resultado')renderRes();if(tab==='config')renderCfg();}
+window.App={
+  estado:()=>S,novoId,toast,save,redesenhar,CFG_PADRAO,
+  // lista de participantes vinda da nuvem (cada item traz o tempo dele em .res)
+  aplicarParts(lista){
+    S.participantes=lista.map(d=>({id:d.id,num:d.num,nome:d.nome,tipo:d.tipo,sexo:d.sexo,idade:d.idade,tel:d.tel||''}));
+    const res={};lista.forEach(d=>{if(d.res)res[d.id]={...d.res};});S.prova.res=res;
+    if(editId&&!getP(editId))limparForm();
+    if(removendo&&!getP(removendo))removendo=null;
+    redesenhar();
+  },
+  aplicarStatus(status){S.prova.status=status||'aberta';redesenhar();},
+  aplicarCfg(config){S.config={...CFG_PADRAO,...(config||{})};aplicarConfig();redesenhar();}
+};
+window.dispatchEvent(new Event('app-pronto'));
 requestAnimationFrame(loop);
 setInterval(()=>{if(tab==='resultado'&&contagem().run)renderRes();},1000);
 

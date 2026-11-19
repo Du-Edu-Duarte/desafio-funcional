@@ -9,7 +9,24 @@ App de cronometragem para desafios de corrida/funcional. Funciona no navegador d
 - **Configurações**: nome do desafio, palavra em destaque, subtítulo, foto/logo e cor do tema.
 - Funciona **sem internet** depois de aberto uma vez (service worker).
 
-> Os dados ficam salvos no navegador do aparelho (localStorage). Use sempre o mesmo aparelho no dia da prova.
+- **Login e sincronização**: os dados ficam na nuvem (Firebase). Quem entra com um e-mail liberado vê os mesmos participantes e tempos em qualquer celular ou computador, ao vivo. Várias pessoas podem cadastrar e cronometrar ao mesmo tempo.
+
+## Configurar o Firebase (uma vez só, grátis)
+1. Acesse https://console.firebase.google.com > **Adicionar projeto** (pode desligar o Google Analytics).
+2. **Criação > Authentication > Vamos começar > E-mail/senha > Ativar > Salvar.**
+3. Em **Authentication > Configurações > Domínios autorizados**, adicione `du-edu-duarte.github.io`.
+4. **Criação > Firestore Database > Criar banco de dados** (modo produção, região `southamerica-east1`).
+5. Em **Firestore > Regras**, apague tudo, cole o conteúdo do arquivo `firestore.rules` e clique em **Publicar**.
+6. Engrenagem > **Configurações do projeto > Seus apps > ícone `</>` (Web)** > registre o app e copie o `firebaseConfig`.
+7. Cole os valores em `js/firebase-config.js` e envie para o GitHub.
+
+### Liberar quem pode entrar
+- O e-mail em `DONO` (`js/firebase-config.js` e `firestore.rules`) entra sempre como administrador.
+- O administrador libera os outros e-mails em **⚙ Config. > Equipe com acesso**. A pessoa liberada toca em **Criar conta**, confirma o e-mail pelo link e entra.
+- Quem cria conta sem estar liberado fica na tela "Acesso não liberado".
+
+### Dados antigos
+No primeiro login, os participantes que já estavam cadastrados no aparelho (antes do login) são enviados para a nuvem. Se a nuvem já tiver dados, o app pergunta antes de juntar (aba Cadastro).
 
 ## Estrutura
 ```
@@ -17,6 +34,9 @@ desafio-funcional/
 ├── index.html              # telas do app
 ├── css/style.css           # visual (cores, fontes, layout)
 ├── js/app.js               # toda a lógica (cadastro, cronômetros, ranking, configurações)
+├── js/nuvem.js             # login e sincronização com o Firebase
+├── js/firebase-config.js   # dados do seu projeto Firebase (preencher)
+├── firestore.rules         # regras de segurança (colar no console do Firebase)
 ├── manifest.webmanifest    # dados para instalar como app
 ├── sw.js                   # funcionamento offline
 └── assets/                 # logo e ícones
@@ -53,7 +73,7 @@ O ícone com a logo aparece na tela do celular e o app abre em tela cheia, sem a
 
 ## Atualizar o app
 1. Altere os arquivos e teste com o Live Server.
-2. Em `sw.js`, aumente a versão (`desafio-v1` → `desafio-v2`) para os celulares baixarem a nova versão.
+2. Em `sw.js`, aumente a versão (`desafio-v4` → `desafio-v5`) para os celulares baixarem a nova versão.
 3. Envie:
 ```bash
 git add .

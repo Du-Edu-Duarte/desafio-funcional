@@ -188,3 +188,16 @@ tr.top1 td{background:var(--yellow-soft)}
 
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--yellow);color:var(--yellow-ink);padding:11px 18px;border-radius:12px;font-size:15px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;max-width:calc(100% - 32px);z-index:20}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* login, cadastro de conta e sincronização */
+input[type=email],input[type=password]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%}
+.auth{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:stretch;padding-top:6vh}
+.auth>.logo{align-self:center;width:96px;height:96px}
+.auth>h1{text-align:center;font-size:clamp(26px,7vw,36px)}
+.auth>h1 span{color:var(--yellow)}
+.auth p{margin:0 0 14px}
+.auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.link{background:none;border:0;padding:4px 0;color:var(--yellow);font-weight:700;font-size:14px;text-decoration:underline}
+.top .sync{margin-top:8px;font-size:10px}
+.pill.sync.off{background:var(--yellow-soft);color:var(--yellow)}
+.pill.sync.err{background:var(--crit-soft);color:var(--crit)}

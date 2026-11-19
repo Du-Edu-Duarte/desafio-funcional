@@ -18,10 +18,61 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="app">
+<!-- LOGIN / CADASTRO -->
+<main class="auth" id="auth">
+  <img class="logo" alt="" src="assets/logo.jpg">
+  <h1>3º Desafio <span>Funcional</span> do Thalison</h1>
+  <div class="stripe" aria-hidden="true"></div>
+  <div class="card">
+    <div id="vCarregando"><p class="muted" style="margin:0">Carregando…</p></div>
+
+    <form id="vLogin" hidden novalidate>
+      <h2>Entrar</h2>
+      <div class="field"><label for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username" inputmode="email"></div>
+      <div class="field"><label for="lSenha">Senha</label><input type="password" id="lSenha" autocomplete="current-password"></div>
+      <div class="err" id="lErr"></div>
+      <div class="actions"><button type="submit" class="btn y" style="flex:1">Entrar</button></div>
+      <div class="auth-links"><button type="button" class="link" id="lEsqueci">Esqueci a senha</button><button type="button" class="link" id="lCriar">Criar conta</button></div>
+    </form>
+
+    <form id="vCriar" hidden novalidate>
+      <h2>Criar conta</h2>
+      <div class="field"><label for="rNome">Nome completo</label><input type="text" id="rNome" autocomplete="name"></div>
+      <div class="field"><label for="rSetor">Setor / função <span class="muted">(ex.: professor, apoio)</span></label><input type="text" id="rSetor"></div>
+      <div class="field"><label for="rEmail">E-mail</label><input type="email" id="rEmail" autocomplete="username" inputmode="email"></div>
+      <div class="field"><label for="rSenha">Senha <span class="muted">(mínimo 6 caracteres)</span></label><input type="password" id="rSenha" autocomplete="new-password"></div>
+      <div class="err" id="rErr"></div>
+      <div class="actions"><button type="submit" class="btn y" style="flex:1">Criar conta</button></div>
+      <div class="auth-links"><button type="button" class="link" id="rVoltar">Já tenho conta</button></div>
+      <p class="hint" style="margin:10px 0 0">Só entra quem teve o e-mail liberado pelo organizador.</p>
+    </form>
+
+    <div id="vVerificar" hidden>
+      <h2>Confirme seu e-mail</h2>
+      <p>Enviamos um link de confirmação para <b id="vEmail"></b>. Abra o e-mail, toque no link e volte aqui. <span class="muted">Olhe também a caixa de spam.</span></p>
+      <div class="err" id="vErr"></div>
+      <div class="actions"><button type="button" class="btn y" id="vJa">Já confirmei</button><button type="button" class="btn" id="vReenviar">Reenviar e-mail</button><button type="button" class="btn ghost" id="vSair">Sair</button></div>
+    </div>
+
+    <div id="vBloqueado" hidden>
+      <h2>Acesso não liberado</h2>
+      <p>O e-mail <b id="bEmail"></b> ainda não foi liberado para este desafio. Peça ao organizador para liberar o seu acesso.</p>
+      <div class="actions"><button type="button" class="btn y" id="bTentar">Tentar de novo</button><button type="button" class="btn ghost" id="bSair">Sair</button></div>
+    </div>
+
+    <div id="vErro" hidden>
+      <h2>Falta configurar</h2>
+      <p id="eMsg"></p>
+    </div>
+  </div>
+  <p class="hint" style="text-align:center">Sistema ECD Tecnologia</p>
+</main>
+
+<div class="app" id="appRoot" hidden>
   <header class="top">
     <img class="logo" alt="Logo do 3º Desafio Funcional do Thalison" src="assets/logo.jpg">
-    <div><h1 id="appTitle">3º Desafio <span>Funcional</span> do Thalison</h1><div class="sub" id="appSub">Cronometragem e classificação da prova</div></div>
+    <div><h1 id="appTitle">3º Desafio <span>Funcional</span> do Thalison</h1><div class="sub" id="appSub">Cronometragem e classificação da prova</div>
+      <span class="pill sync" id="sync" title="Situação da sincronização">Conectando</span></div>
   </header>
   <div class="stripe" aria-hidden="true"></div>
 
@@ -78,7 +129,8 @@
         <div class="actions"><button type="submit" class="btn y" id="btnSalvar" style="flex:1">Cadastrar participante</button><button type="button" class="btn ghost" id="btnCancelEdit" hidden>Cancelar edição</button></div>
       </form>
       <div>
-        <div class="demo" id="demoBox"><span>Os participantes abaixo são <b>exemplos</b>. Apague e cadastre os reais.</span><button type="button" class="btn sm" id="btnClearDemo">Apagar exemplos</button></div>
+        <div class="demo" id="migraBox" hidden><span id="migraMsg"></span><span class="actions"><button type="button" class="btn sm y" id="migraSim">Enviar para a nuvem</button><button type="button" class="btn sm ghost" id="migraNao">Ignorar</button></span></div>
+        <div class="demo" id="dupBox" hidden></div>
         <div class="stats" id="cadStats"></div>
         <div class="tbl-wrap"><table id="tblCad"></table></div>
       </div>
@@ -124,12 +176,35 @@
           <div class="preview"><img id="prevLogo" alt=""><div><h3 id="prevTitle"></h3><span class="tag" style="margin-top:6px;display:inline-block">Aluno</span></div></div></div>
         <div class="actions"><button type="button" class="btn danger" id="cfgReset">Restaurar tudo ao padrão</button></div>
         <div class="confirm" id="cfgConfirm" hidden style="margin-top:10px"><span>Voltar nome, foto e cores ao padrão? Participantes e tempos não mudam.</span><button type="button" class="btn sm y" id="cfgYes">Restaurar</button><button type="button" class="btn sm ghost" id="cfgNo">Cancelar</button></div>
-        <p class="hint" style="margin:12px 0 0">As mudanças são salvas na hora, neste aparelho.</p>
+        <p class="hint" style="margin:12px 0 0">As mudanças são salvas na hora e aparecem em todos os aparelhos logados.</p>
+      </div>
+      <div class="card">
+        <h2>Conta</h2>
+        <p style="margin:0 0 4px"><b id="ctNome"></b></p>
+        <p class="muted" style="margin:0 0 14px"><span id="ctEmail"></span> · <span id="ctPapel"></span></p>
+        <div class="actions"><button type="button" class="btn" id="ctSair">Sair deste aparelho</button></div>
+        <p class="hint" style="margin:12px 0 0">Para usar em outro celular ou computador, abra o mesmo link e entre com um e-mail liberado. Tudo aparece igual, ao vivo.</p>
+      </div>
+      <div class="card" id="cardEquipe" hidden>
+        <h2>Equipe com acesso</h2>
+        <p class="hint" style="margin:0 0 12px">Libere o e-mail de quem vai ajudar. A pessoa cria a própria conta com esse e-mail e já entra.</p>
+        <form id="formEquipe" novalidate>
+          <div class="field"><label for="eqEmail">E-mail da pessoa</label><input type="email" id="eqEmail" inputmode="email" placeholder="ajudante@email.com"></div>
+          <div class="field"><span class="lb">Permissão</span>
+            <div class="seg" role="radiogroup" aria-label="Permissão">
+              <input type="radio" name="eqPapel" id="eqEquipe" value="equipe" checked><label for="eqEquipe">Equipe<small>Cadastra e cronometra</small></label>
+              <input type="radio" name="eqPapel" id="eqAdmin" value="admin"><label for="eqAdmin">Administrador<small>Também libera pessoas</small></label>
+            </div></div>
+          <div class="err" id="eqErr"></div>
+          <div class="actions"><button type="submit" class="btn y">Liberar acesso</button></div>
+        </form>
+        <div class="tbl-wrap" style="margin-top:14px"><table id="tblEquipe"></table></div>
       </div>
     </div>
   </section>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="js/app.js"></script>
+<script type="module" src="js/nuvem.js"></script>
 </body>
 </html>
