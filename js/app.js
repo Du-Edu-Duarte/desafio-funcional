@@ -152,7 +152,7 @@ function renderCad(){
   const travado=true;
   $('#tblCad').innerHTML=`<thead><tr><th class="num">Nº</th><th>Nome</th><th>Tipo</th><th>Sexo / idade</th><th>Telefone</th><th></th></tr></thead><tbody>${
     ps.length?ps.map(p=>`<tr><td class="num"><span class="bign">${p.num}</span></td><td><b>${esc(p.nome)}</b></td><td>${tipoTag(p.tipo)}</td><td class="muted">${sexoTxt(p)}${p.idade?' · '+p.idade+' anos':''}</td><td class="muted">${esc(p.tel)||'—'}</td>
-    <td><div class="rowact">${removendo===p.id?`<span class="muted" style="align-self:center">Remover?</span><button type="button" class="btn sm danger" data-delok="${p.id}">Sim</button><button type="button" class="btn sm ghost" data-delno="1">Não</button>`:
+    <td><div class="rowact">${removendo===p.id?`<span class="muted" style="align-self:center">Remover o nº ${p.num}?</span><button type="button" class="btn sm danger" data-delok="${p.id}" data-ajustar="1" title="Os números maiores descem 1 para não ficar buraco">Sim, ajustar nº</button><button type="button" class="btn sm ghost" data-delok="${p.id}" title="Os outros continuam com o mesmo número">Sim, manter nº</button><button type="button" class="btn sm ghost" data-delno="1">Não</button>`:
     `<button type="button" class="btn sm" data-edit="${p.id}">Editar</button><button type="button" class="btn sm ghost" data-del="${p.id}" ${travado&&S.prova.res[p.id]?'disabled title="Já tem tempo registrado"':''}>Remover</button>`}</div></td></tr>`).join(''):
     '<tr><td colspan="6" style="padding:20px;text-align:center" class="muted">Nenhum participante. Use o formulário para cadastrar.</td></tr>'}</tbody>`;
   if(!editId)$('#cNum').placeholder='Automático: '+proxNum();
@@ -280,7 +280,9 @@ $('#tblCad').addEventListener('click',e=>{
   if(b.dataset.edit)editar(b.dataset.edit);
   else if(b.dataset.del){removendo=b.dataset.del;renderCad();}
   else if(b.dataset.delno){removendo=null;renderCad();}
-  else if(b.dataset.delok){const id=b.dataset.delok;S.participantes=S.participantes.filter(p=>p.id!==id);delete S.prova.res[id];S.prova.hist=S.prova.hist.filter(x=>x.id!==id);removendo=null;if(editId===id)limparForm();save();renderCad();renderProva();toast('Participante removido');}
+  else if(b.dataset.delok){const id=b.dataset.delok,saiu=getP(id);S.participantes=S.participantes.filter(p=>p.id!==id);
+    if(b.dataset.ajustar&&saiu)S.participantes.forEach(p=>{if(p.num>saiu.num)p.num--;}); // fecha o buraco: 11 vira 10, 12 vira 11…
+    delete S.prova.res[id];S.prova.hist=S.prova.hist.filter(x=>x.id!==id);removendo=null;if(editId===id)limparForm();save();renderCad();renderProva();toast(b.dataset.ajustar?'Participante removido e números ajustados':'Participante removido');}
 });
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filtro=b.dataset.f;$('#copyArea').hidden=true;renderRes();});
 $('#btnCopy').onclick=()=>copiar(textoResultado());
